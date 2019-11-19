@@ -47,7 +47,37 @@ namespace MessagePack.Tests
             var s2 = MessagePackSerializer.Serialize(p, options);
             var p2 = MessagePackSerializer.Deserialize<AllowPrivateParent>(s2, options);
 
+            /*var c = new APObject();
+            var s = MessagePackSerializer.Serialize(c, options);
+            var c2 = MessagePackSerializer.Deserialize<APObject>(s, options);*/
+
             Console.WriteLine("fin");
+        }
+    }
+
+    [MessagePackFormatter(typeof(CustomObjectFormatter))]
+    public class APObject
+    {
+        private string internalId;
+
+        public APObject()
+        {
+            this.internalId = Guid.NewGuid().ToString();
+        }
+
+        // serialize/deserialize internal field.
+        public class CustomObjectFormatter : Formatters.IMessagePackFormatter<APObject>
+        {
+            public void Serialize(ref MessagePackWriter writer, APObject value, MessagePackSerializerOptions options)
+            {
+                options.Resolver.GetFormatterWithVerify<string>().Serialize(ref writer, value.internalId, options);
+            }
+
+            public APObject Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
+            {
+                var id = options.Resolver.GetFormatterWithVerify<string>().Deserialize(ref reader, options);
+                return new APObject { internalId = id };
+            }
         }
     }
 
