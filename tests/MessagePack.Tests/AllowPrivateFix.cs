@@ -36,7 +36,7 @@ namespace MessagePack.Tests
             });
             //var options = MessagePackSerializerOptions.Standard.WithLZ4Compression(true).WithResolver(StandardResolverAllowPrivate.Instance); //.WithResolver(resolver);
             var options = MessagePackSerializerOptions.Standard.WithResolver(resolver2);
-            //MessagePackSerializer.DefaultOptions = options; //affects other tests.
+            //MessagePackSerializer.DefaultOptions = options; //affects other tests
 
             var c = new AllowPrivateChild(1, "one");
             var s = MessagePackSerializer.Serialize(c, options);
