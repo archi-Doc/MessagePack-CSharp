@@ -394,7 +394,7 @@ namespace MessagePack.Internal
                         il.EmitLoadThis();
                         il.EmitLdfld(stringByteKeysField);
                     },
-                    (index, member) =>
+                    (index, key, member) =>
                     {
                         FieldInfo fi;
                         if (!customFormatterLookup.TryGetValue(member, out fi))
@@ -511,7 +511,7 @@ namespace MessagePack.Internal
                     {
                         il.EmitLdarg(0);
                     },
-                    (index, member) =>
+                    (index, key, member) =>
                     {
                         if (serializeCustomFormatters.Count == 0)
                         {
@@ -526,7 +526,7 @@ namespace MessagePack.Internal
                         return () =>
                         {
                             il.EmitLdarg(1); // read object[]
-                            il.EmitLdc_I4(index);
+                            il.EmitLdc_I4(key);
                             il.Emit(OpCodes.Ldelem_Ref); // object
                             il.Emit(OpCodes.Castclass, serializeCustomFormatters[index].GetType());
                         };
@@ -650,7 +650,7 @@ namespace MessagePack.Internal
         }
 
         // void Serialize(ref [arg:1]MessagePackWriter writer, [arg:2]T value, [arg:3]MessagePackSerializerOptions options);
-        private static void BuildSerialize(Type type, ObjectSerializationInfo info, ILGenerator il, Action emitStringByteKeys, Func<int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, int firstArgIndex)
+        private static void BuildSerialize(Type type, ObjectSerializationInfo info, ILGenerator il, Action emitStringByteKeys, Func<int, int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, int firstArgIndex)
         {
             var argWriter = new ArgumentField(il, firstArgIndex);
             var argValue = new ArgumentField(il, firstArgIndex + 1, type);
@@ -711,7 +711,7 @@ namespace MessagePack.Internal
                     ObjectSerializationInfo.EmittableMember member;
                     if (intKeyMap.TryGetValue(i, out member))
                     {
-                        EmitSerializeValue(il, type.GetTypeInfo(), member, index++, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
+                        EmitSerializeValue(il, type.GetTypeInfo(), member, i, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
                     }
                     else
                     {
