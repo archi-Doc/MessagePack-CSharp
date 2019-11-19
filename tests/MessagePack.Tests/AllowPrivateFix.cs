@@ -36,16 +36,16 @@ namespace MessagePack.Tests
             });
             //var options = MessagePackSerializerOptions.Standard.WithLZ4Compression(true).WithResolver(StandardResolverAllowPrivate.Instance); //.WithResolver(resolver);
             var options = MessagePackSerializerOptions.Standard.WithResolver(resolver2);
-            MessagePackSerializer.DefaultOptions = options;
+            //MessagePackSerializer.DefaultOptions = options; //affects other tests.
 
             var c = new AllowPrivateChild(1, "one");
-            var s = MessagePackSerializer.Serialize(c);
-            var c2 = MessagePackSerializer.Deserialize<AllowPrivateChild>(s);
-            var c3 = MessagePackSerializer.Deserialize<AllowPrivateChild2>(s);
+            var s = MessagePackSerializer.Serialize(c, options);
+            var c2 = MessagePackSerializer.Deserialize<AllowPrivateChild>(s, options);
+            var c3 = MessagePackSerializer.Deserialize<AllowPrivateChild2>(s, options);
 
             var p = new AllowPrivateParent(12, "second") { First = new AllowPrivateChild(10, "fir") };
-            var s2 = MessagePackSerializer.Serialize(p);
-            var p2 = MessagePackSerializer.Deserialize<AllowPrivateParent>(s2);
+            var s2 = MessagePackSerializer.Serialize(p, options);
+            var p2 = MessagePackSerializer.Deserialize<AllowPrivateParent>(s2, options);
 
             Console.WriteLine("fin");
         }
