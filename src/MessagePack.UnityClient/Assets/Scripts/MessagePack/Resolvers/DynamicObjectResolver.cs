@@ -711,7 +711,7 @@ namespace MessagePack.Internal
                     ObjectSerializationInfo.EmittableMember member;
                     if (intKeyMap.TryGetValue(i, out member))
                     {
-                        EmitSerializeValue(il, type.GetTypeInfo(), member, i, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
+                        EmitSerializeValue(il, type.GetTypeInfo(), member, index++, i, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
                     }
                     else
                     {
@@ -766,7 +766,7 @@ namespace MessagePack.Internal
                         il.EmitCall(MessagePackWriterTypeInfo.WriteRaw);
                     }
 
-                    EmitSerializeValue(il, type.GetTypeInfo(), item, index, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
+                    EmitSerializeValue(il, type.GetTypeInfo(), item, index, index, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
                     index++;
                 }
             }
@@ -774,11 +774,11 @@ namespace MessagePack.Internal
             il.Emit(OpCodes.Ret);
         }
 
-        private static void EmitSerializeValue(ILGenerator il, TypeInfo type, ObjectSerializationInfo.EmittableMember member, int index, Func<int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, ArgumentField argWriter, ArgumentField argValue, ArgumentField argOptions, LocalBuilder localResolver)
+        private static void EmitSerializeValue(ILGenerator il, TypeInfo type, ObjectSerializationInfo.EmittableMember member, int index, int key, Func<int, int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, ArgumentField argWriter, ArgumentField argValue, ArgumentField argOptions, LocalBuilder localResolver)
         {
             Label endLabel = il.DefineLabel();
             Type t = member.Type;
-            Action emitter = tryEmitLoadCustomFormatter(index, member);
+            Action emitter = tryEmitLoadCustomFormatter(index, key, member);
             if (emitter != null)
             {
                 emitter();
