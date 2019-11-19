@@ -394,7 +394,7 @@ namespace MessagePack.Internal
                         il.EmitLoadThis();
                         il.EmitLdfld(stringByteKeysField);
                     },
-                    (index, key, member) =>
+                    (index, member) =>
                     {
                         FieldInfo fi;
                         if (!customFormatterLookup.TryGetValue(member, out fi))
@@ -511,7 +511,7 @@ namespace MessagePack.Internal
                     {
                         il.EmitLdarg(0);
                     },
-                    (index, key, member) =>
+                    (index, member) =>
                     {
                         if (serializeCustomFormatters.Count == 0)
                         {
@@ -526,7 +526,7 @@ namespace MessagePack.Internal
                         return () =>
                         {
                             il.EmitLdarg(1); // read object[]
-                            il.EmitLdc_I4(key);
+                            il.EmitLdc_I4(index);
                             il.Emit(OpCodes.Ldelem_Ref); // object
                             il.Emit(OpCodes.Castclass, serializeCustomFormatters[index].GetType());
                         };
@@ -650,7 +650,7 @@ namespace MessagePack.Internal
         }
 
         // void Serialize(ref [arg:1]MessagePackWriter writer, [arg:2]T value, [arg:3]MessagePackSerializerOptions options);
-        private static void BuildSerialize(Type type, ObjectSerializationInfo info, ILGenerator il, Action emitStringByteKeys, Func<int, int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, int firstArgIndex)
+        private static void BuildSerialize(Type type, ObjectSerializationInfo info, ILGenerator il, Action emitStringByteKeys, Func<int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, int firstArgIndex)
         {
             var argWriter = new ArgumentField(il, firstArgIndex);
             var argValue = new ArgumentField(il, firstArgIndex + 1, type);
@@ -711,7 +711,7 @@ namespace MessagePack.Internal
                     ObjectSerializationInfo.EmittableMember member;
                     if (intKeyMap.TryGetValue(i, out member))
                     {
-                        EmitSerializeValue(il, type.GetTypeInfo(), member, index++, i, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
+                        EmitSerializeValue(il, type.GetTypeInfo(), member, index++, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
                     }
                     else
                     {
@@ -766,7 +766,7 @@ namespace MessagePack.Internal
                         il.EmitCall(MessagePackWriterTypeInfo.WriteRaw);
                     }
 
-                    EmitSerializeValue(il, type.GetTypeInfo(), item, index, index, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
+                    EmitSerializeValue(il, type.GetTypeInfo(), item, index, tryEmitLoadCustomFormatter, argWriter, argValue, argOptions, localResolver);
                     index++;
                 }
             }
@@ -774,11 +774,11 @@ namespace MessagePack.Internal
             il.Emit(OpCodes.Ret);
         }
 
-        private static void EmitSerializeValue(ILGenerator il, TypeInfo type, ObjectSerializationInfo.EmittableMember member, int index, int key, Func<int, int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, ArgumentField argWriter, ArgumentField argValue, ArgumentField argOptions, LocalBuilder localResolver)
+        private static void EmitSerializeValue(ILGenerator il, TypeInfo type, ObjectSerializationInfo.EmittableMember member, int index, Func<int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, ArgumentField argWriter, ArgumentField argValue, ArgumentField argOptions, LocalBuilder localResolver)
         {
             Label endLabel = il.DefineLabel();
             Type t = member.Type;
-            Action emitter = tryEmitLoadCustomFormatter(index, key, member);
+            Action emitter = tryEmitLoadCustomFormatter(index, member);
             if (emitter != null)
             {
                 emitter();
