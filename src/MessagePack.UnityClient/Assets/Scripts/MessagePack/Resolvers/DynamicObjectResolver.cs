@@ -94,7 +94,7 @@ namespace MessagePack.Resolvers
                     return;
                 }
 
-                TypeInfo formatterTypeInfo = DynamicObjectTypeBuilder.BuildType(DynamicAssembly, typeof(T), false, false);
+                TypeInfo formatterTypeInfo = DynamicObjectTypeBuilder.BuildType(DynamicAssembly, typeof(T), false, false, false);
                 if (formatterTypeInfo == null)
                 {
                     return;
@@ -156,6 +156,89 @@ namespace MessagePack.Resolvers
                 {
                     Formatter = (IMessagePackFormatter<T>)DynamicObjectTypeBuilder.BuildFormatterToDynamicMethod(typeof(T), false, false, true);
                 }
+            }
+        }
+    }
+
+    public sealed class DynamicObjectResolverKeepValue : IFormatterResolver
+    {
+        private const string ModuleName = "MessagePack.Resolvers.DynamicObjectResolverKeepValue";
+
+        /// <summary>
+        /// The singleton instance that can be used.
+        /// </summary>
+        public static readonly DynamicObjectResolverKeepValue Instance;
+
+        /// <summary>
+        /// A <see cref="MessagePackSerializerOptions"/> instance with this formatter pre-configured.
+        /// </summary>
+        public static readonly MessagePackSerializerOptions Options;
+
+        internal static readonly DynamicAssembly DynamicAssembly;
+
+        static DynamicObjectResolverKeepValue()
+        {
+            Instance = new DynamicObjectResolverKeepValue();
+            Options = new MessagePackSerializerOptions(Instance);
+            DynamicAssembly = new DynamicAssembly(ModuleName);
+        }
+
+        private DynamicObjectResolverKeepValue()
+        {
+        }
+
+#if NETFRAMEWORK
+        public AssemblyBuilder Save()
+        {
+            return DynamicAssembly.Save();
+        }
+#endif
+
+        public IMessagePackFormatter<T> GetFormatter<T>()
+        {
+            return FormatterCache<T>.Formatter;
+        }
+
+        private static class FormatterCache<T>
+        {
+            public static readonly IMessagePackFormatter<T> Formatter;
+
+            static FormatterCache()
+            {
+                TypeInfo ti = typeof(T).GetTypeInfo();
+
+                if (ti.IsInterface)
+                {
+                    return;
+                }
+
+                if (ti.IsNullable())
+                {
+                    ti = ti.GenericTypeArguments[0].GetTypeInfo();
+
+                    var innerFormatter = DynamicObjectResolver.Instance.GetFormatterDynamic(ti.AsType());
+                    if (innerFormatter == null)
+                    {
+                        return;
+                    }
+
+                    Formatter = (IMessagePackFormatter<T>)Activator.CreateInstance(typeof(StaticNullableFormatter<>).MakeGenericType(ti.AsType()), new object[] { innerFormatter });
+                    return;
+                }
+
+                if (ti.IsAnonymous())
+                {
+                    Formatter = (IMessagePackFormatter<T>)DynamicObjectTypeBuilder.BuildFormatterToDynamicMethod(typeof(T), true, true, false);
+                    return;
+                }
+
+                TypeInfo formatterTypeInfo = DynamicObjectTypeBuilder.BuildType(DynamicAssembly, typeof(T), false, false, true);
+                if (formatterTypeInfo == null)
+                {
+                    return;
+                }
+
+                Formatter = (IMessagePackFormatter<T>)Activator.CreateInstance(formatterTypeInfo.AsType());
             }
         }
     }
@@ -230,7 +313,7 @@ namespace MessagePack.Resolvers
                     return;
                 }
 
-                TypeInfo formatterTypeInfo = DynamicObjectTypeBuilder.BuildType(DynamicAssembly, typeof(T), true, true);
+                TypeInfo formatterTypeInfo = DynamicObjectTypeBuilder.BuildType(DynamicAssembly, typeof(T), true, true, false);
                 if (formatterTypeInfo == null)
                 {
                     return;
@@ -334,7 +417,7 @@ namespace MessagePack.Internal
             { typeof(MessagePack.Nil) },
         };
 
-        public static TypeInfo BuildType(DynamicAssembly assembly, Type type, bool forceStringKey, bool contractless)
+        public static TypeInfo BuildType(DynamicAssembly assembly, Type type, bool forceStringKey, bool contractless, bool keepValue)
         {
             if (ignoreTypes.Contains(type))
             {
@@ -444,7 +527,8 @@ namespace MessagePack.Internal
                             il.EmitLdfld(fi);
                         };
                     },
-                    1); // firstArgIndex:0 is this.
+                    1, // firstArgIndex:0 is this.
+                    keepValue);
             }
 
             return typeBuilder.CreateTypeInfo();
@@ -568,7 +652,8 @@ namespace MessagePack.Internal
                             il.Emit(OpCodes.Castclass, deserializeCustomFormatters[index].GetType());
                         };
                     },
-                    1);
+                    1,
+                    false);
             }
 
             object serializeDelegate = serialize.CreateDelegate(typeof(AnonymousSerializeFunc<>).MakeGenericType(type));
@@ -846,7 +931,7 @@ namespace MessagePack.Internal
         }
 
         // T Deserialize([arg:1]ref MessagePackReader reader, [arg:2]MessagePackSerializerOptions options);
-        private static void BuildDeserialize(Type type, ObjectSerializationInfo info, ILGenerator il, Func<int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, int firstArgIndex)
+        private static void BuildDeserialize(Type type, ObjectSerializationInfo info, ILGenerator il, Func<int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, int firstArgIndex, bool keepValue)
         {
             var reader = new ArgumentField(il, firstArgIndex, @ref: true);
             var argResolver = new ArgumentField(il, firstArgIndex + 1);
@@ -904,6 +989,7 @@ namespace MessagePack.Internal
                             {
                                 MemberInfo = member,
                                 LocalField = il.DeclareLocal(member.Type),
+                                LocalFieldFlag = il.DeclareLocal(typeof(bool)), //archi-Doc
                                 SwitchLabel = il.DefineLabel(),
                             };
                         }
@@ -919,6 +1005,7 @@ namespace MessagePack.Internal
                             {
                                 MemberInfo = null,
                                 LocalField = null,
+                                LocalFieldFlag = null, //archi-Doc
                                 SwitchLabel = gotoDefault.Value,
                             };
                         }
@@ -932,6 +1019,7 @@ namespace MessagePack.Internal
                     {
                         MemberInfo = item,
                         LocalField = il.DeclareLocal(item.Type),
+                        LocalFieldFlag = il.DeclareLocal(typeof(bool)), //archi-Doc
                         //// SwitchLabel = il.DefineLabel()
                     })
                     .ToArray();
@@ -1041,7 +1129,7 @@ namespace MessagePack.Internal
             }
 
             // create result object
-            LocalBuilder structLocal = EmitNewObject(il, type, info, infoList);
+            LocalBuilder structLocal = EmitNewObject(il, type, info, infoList, keepValue);
 
             // IMessagePackSerializationCallbackReceiver.OnAfterDeserialize()
             if (type.GetTypeInfo().ImplementedInterfaces.Any(x => x == typeof(IMessagePackSerializationCallbackReceiver)))
@@ -1139,9 +1227,12 @@ namespace MessagePack.Internal
 
             il.MarkLabel(storeLabel);
             il.EmitStloc(info.LocalField);
+
+            il.EmitBoolean(true); //archi-Doc
+            il.EmitStloc(info.LocalFieldFlag); //archi-Doc
         }
 
-        private static LocalBuilder EmitNewObject(ILGenerator il, Type type, ObjectSerializationInfo info, DeserializeInfo[] members)
+        private static LocalBuilder EmitNewObject(ILGenerator il, Type type, ObjectSerializationInfo info, DeserializeInfo[] members, bool keepValue)
         {
             if (info.IsClass)
             {
@@ -1155,9 +1246,15 @@ namespace MessagePack.Internal
 
                 foreach (DeserializeInfo item in members.Where(x => x.MemberInfo != null && x.MemberInfo.IsWritable))
                 {
+                    Label skipLocalField = il.DefineLabel(); //archi-Doc
+                    il.EmitLdloc(item.LocalFieldFlag); //archi-Doc
+                    il.Emit(OpCodes.Brfalse_S, skipLocalField); //archi-Doc
+
                     il.Emit(OpCodes.Dup);
                     il.EmitLdloc(item.LocalField);
                     item.MemberInfo.EmitStoreValue(il);
+
+                    il.MarkLabel(skipLocalField); //archi-Doc
                 }
 
                 return null;
@@ -1303,6 +1400,8 @@ namespace MessagePack.Internal
             public ObjectSerializationInfo.EmittableMember MemberInfo { get; set; }
 
             public LocalBuilder LocalField { get; set; }
+
+            public LocalBuilder LocalFieldFlag { get; set; }//archi-Doc
 
             public Label SwitchLabel { get; set; }
         }

@@ -32,7 +32,7 @@ namespace MessagePack.Tests
                 DynamicEnumResolver.Instance, // Try Enum
                 DynamicGenericResolver.Instance, // Try Array, Tuple, Collection, Enum(Generic Fallback)
                 DynamicUnionResolver.Instance, // Try Union(Interface)
-                DynamicObjectResolverAllowPrivate.Instance,
+                DynamicObjectResolverKeepValue.Instance,
             });
             //var options = MessagePackSerializerOptions.Standard.WithLZ4Compression(true).WithResolver(StandardResolverAllowPrivate.Instance); //.WithResolver(resolver);
             var options = MessagePackSerializerOptions.Standard.WithResolver(resolver2);
@@ -95,10 +95,10 @@ namespace MessagePack.Tests
     public class KeepValueChild2
     {
         [Key(0)]
-        private int Id { get; set; }
+        public int Id { get; set; } = -1;
 
         [Key(2)]
-        public string Memo { get; set; } = "empty"; //invalid 
+        public string Memo { get; set; } = "empty"; //invalid
 
         public KeepValueChild2()
         {
