@@ -13,10 +13,10 @@ using Xunit;
 
 namespace MessagePack.Tests
 {
-    public class AllowPrivateFix
+    public class KeepValueTest
     {
         [Fact]
-        public void AllowPrivateFixTest()
+        public void KeepValueTest1()
         {
             var resolver = CompositeResolver.Create(new IFormatterResolver[] {
                 BuiltinResolver.Instance, // Try Builtin
@@ -38,37 +38,37 @@ namespace MessagePack.Tests
             var options = MessagePackSerializerOptions.Standard.WithResolver(resolver2);
             //MessagePackSerializer.DefaultOptions = options; //affects other tests.
 
-            var c = new AllowPrivateChild(1, "one");
+            var c = new KeepValueChild(1, "one", 11);
             var s = MessagePackSerializer.Serialize(c, options);
-            var c2 = MessagePackSerializer.Deserialize<AllowPrivateChild>(s, options);
-            var c3 = MessagePackSerializer.Deserialize<AllowPrivateChild2>(s, options);
+            var c2 = MessagePackSerializer.Deserialize<KeepValueChild>(s, options);
+            var c3 = MessagePackSerializer.Deserialize<KeepValueChild2>(s, options);
 
-            var p = new AllowPrivateParent(12, "second") { First = new AllowPrivateChild(10, "fir") };
+            var p = new KeepValueParent(12, "second", 122) { First = new KeepValueChild(10, "fir", 1) };
             var s2 = MessagePackSerializer.Serialize(p, options);
-            var p2 = MessagePackSerializer.Deserialize<AllowPrivateParent>(s2, options);
+            var p2 = MessagePackSerializer.Deserialize<KeepValueParent>(s2, options);
 
             Console.WriteLine("fin");
         }
     }
 
     [MessagePackObject]
-    public class AllowPrivateParent
+    public class KeepValueParent
     {
         [Key(0)]
-        public AllowPrivateChild First { get; set; }
+        public KeepValueChild First { get; set; }
 
         [Key(1)]
-        private AllowPrivateChild second;
+        public KeepValueChild Second { get; set; }
 
-        public AllowPrivateParent(int id, string name)
+        public KeepValueParent(int id, string name, int age)
         {
-            second = new AllowPrivateChild(id, name);
+            Second = new KeepValueChild(id, name, age);
         }
-        public AllowPrivateParent() { }
+        public KeepValueParent() { }
     }
 
     [MessagePackObject]
-    public class AllowPrivateChild
+    public class KeepValueChild
     {
         [Key(0)]
         public int Id { get; set; }
@@ -76,33 +76,31 @@ namespace MessagePack.Tests
         [Key(1)]
         public string Name { get; set; }
 
-        public AllowPrivateChild(int id, string name)
+        [Key(3)]
+        public int Age { get; set; } = -1; //initial value
+
+        public KeepValueChild(int id, string name, int age)
         {
             Id = id;
             Name = name;
+            Age = age;
         }
 
-        /*public ContractlessBugChild()
+        public KeepValueChild()
         {
-        }*/
+        }
     }
 
     [MessagePackObject]
-    public class AllowPrivateChild2
+    public class KeepValueChild2
     {
         [Key(0)]
         private int Id { get; set; }
 
-        //[Key(1)]
-        //public string Name { get; set; }
-
         [Key(2)]
-        private int Year { get; set; } = 999;
+        public string Memo { get; set; } = "empty"; //invalid 
 
-        [Key(3)]
-        public string Memo { get; set; } = "empty2";//invalid 
-
-        public AllowPrivateChild2()
+        public KeepValueChild2()
         {
         }
     }
