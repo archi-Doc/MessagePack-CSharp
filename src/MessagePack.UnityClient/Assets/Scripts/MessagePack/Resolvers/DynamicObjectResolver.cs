@@ -1228,7 +1228,7 @@ namespace MessagePack.Internal
             il.MarkLabel(storeLabel);
             il.EmitStloc(info.LocalField);
 
-            il.EmitBoolean(true); //archi-Doc
+            il.EmitBoolean(false); //archi-Doc
             il.EmitStloc(info.LocalFieldFlag); //archi-Doc
         }
 
