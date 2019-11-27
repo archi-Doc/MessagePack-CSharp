@@ -1228,7 +1228,7 @@ namespace MessagePack.Internal
             il.MarkLabel(storeLabel);
             il.EmitStloc(info.LocalField);
 
-            il.EmitBoolean(false); //archi-Doc
+            il.EmitBoolean(true); //archi-Doc
             il.EmitStloc(info.LocalFieldFlag); //archi-Doc
         }
 
@@ -1248,7 +1248,7 @@ namespace MessagePack.Internal
                 {
                     Label skipLocalField = il.DefineLabel(); //archi-Doc
                     il.EmitLdloc(item.LocalFieldFlag); //archi-Doc
-                    il.Emit(OpCodes.Brfalse_S, skipLocalField); //archi-Doc
+                    il.Emit(OpCodes.Brfalse, skipLocalField); //archi-Doc
 
                     il.Emit(OpCodes.Dup);
                     il.EmitLdloc(item.LocalField);

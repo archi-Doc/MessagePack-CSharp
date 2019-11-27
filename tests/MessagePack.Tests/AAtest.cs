@@ -64,6 +64,7 @@ namespace MessagePack.Tests
         {
             Second = new KeepValueChild(id, name, age);
         }
+
         public KeepValueParent() { }
     }
 
@@ -100,8 +101,12 @@ namespace MessagePack.Tests
         [Key(2)]
         public string Memo { get; set; } = "empty"; //invalid
 
+        [Key(3)]
+        public string Height { get; set; }
+
         public KeepValueChild2()
         {
+            Height = "100";
         }
     }
 }
