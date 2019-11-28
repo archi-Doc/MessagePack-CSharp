@@ -13,11 +13,40 @@ using Xunit;
 
 namespace MessagePack.Tests
 {
+    [MessagePackObject]
+    public class Class4a
+    {
+        [Key(0)]
+        public int x { get; set; } = 1;
+        [Key(1)]
+        public int y { get; set; } = 2;
+    }
+    [MessagePackObject]
+    public class Class4b
+    {
+        [Key(0)]
+        public int x { get; set; } = 3;
+        [Key(2)]
+        public int y { get; set; } = 4;
+    }
+
     public class KeepValueTest
     {
         [Fact]
         public void KeepValueTest1()
         {
+            {
+                var x = new Class4a();
+                var ss = MessagePackSerializer.Serialize(x);
+                var x2 = MessagePackSerializer.Deserialize<Class4a>(ss);
+                var x3 = MessagePackSerializer.Deserialize<Class4b>(ss);
+
+                var y = new Class4b();
+                var ss2 = MessagePackSerializer.Serialize(y);
+                var y2 = MessagePackSerializer.Deserialize<Class4a>(ss2);
+                var y3 = MessagePackSerializer.Deserialize<Class4b>(ss2);
+            }
+
             var resolver = CompositeResolver.Create(new IFormatterResolver[] {
                 BuiltinResolver.Instance, // Try Builtin
                 AttributeFormatterResolver.Instance, // Try use [MessagePackFormatter]
@@ -39,9 +68,9 @@ namespace MessagePack.Tests
             //MessagePackSerializer.DefaultOptions = options; //affects other tests.
 
             var c = new KeepValueChild(1, "one", 11);
-            var s = MessagePackSerializer.Serialize(c, options);
-            var c2 = MessagePackSerializer.Deserialize<KeepValueChild>(s, options);
-            var c3 = MessagePackSerializer.Deserialize<KeepValueChild2>(s, options);
+            var s = MessagePackSerializer.Serialize(c);
+            var c2 = MessagePackSerializer.Deserialize<KeepValueChild>(s);
+            var c3 = MessagePackSerializer.Deserialize<KeepValueChild2>(s);
 
             var p = new KeepValueParent(12, "second", 122) { First = new KeepValueChild(10, "fir", 1) };
             var s2 = MessagePackSerializer.Serialize(p, options);
@@ -101,7 +130,7 @@ namespace MessagePack.Tests
         [Key(2)]
         public string Memo { get; set; } = "empty"; //invalid
 
-        [Key(3)]
+        [Key(4)]
         public string Height { get; set; }
 
         public KeepValueChild2()
