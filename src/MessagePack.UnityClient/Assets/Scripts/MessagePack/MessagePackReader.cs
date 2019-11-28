@@ -259,7 +259,17 @@ namespace MessagePack
         /// </summary>
         /// <returns><c>true</c> if the next token was nil; <c>false</c> otherwise.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool CheckNil() => this.NextCode == MessagePackCode.Nil;
+        public bool IsNextNil()
+        {
+            try
+            {
+                return this.NextCode == MessagePackCode.Nil;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         /// <summary>
         /// Reads a sequence of bytes without any decoding.

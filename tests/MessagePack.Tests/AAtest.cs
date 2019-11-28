@@ -35,6 +35,8 @@ namespace MessagePack.Tests
         [Fact]
         public void KeepValueTest1()
         {
+            var sss = MessagePackSerializer.Serialize<Class4a>(null);
+            var yyy = MessagePackSerializer.Deserialize<Class4a>(sss);
             {
                 var x = new Class4a();
                 var ss = MessagePackSerializer.Serialize(x);
@@ -61,7 +63,8 @@ namespace MessagePack.Tests
                 DynamicEnumResolver.Instance, // Try Enum
                 DynamicGenericResolver.Instance, // Try Array, Tuple, Collection, Enum(Generic Fallback)
                 DynamicUnionResolver.Instance, // Try Union(Interface)
-                DynamicObjectResolverKeepValue.Instance,
+                DynamicObjectResolver.Instance,
+                //DynamicObjectResolverKeepValue.Instance,
             });
             //var options = MessagePackSerializerOptions.Standard.WithLZ4Compression(true).WithResolver(StandardResolverAllowPrivate.Instance); //.WithResolver(resolver);
             var options = MessagePackSerializerOptions.Standard.WithResolver(resolver2);
