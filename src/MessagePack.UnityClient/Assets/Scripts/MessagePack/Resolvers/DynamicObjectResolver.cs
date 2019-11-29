@@ -1119,9 +1119,9 @@ namespace MessagePack.Internal
                         if (item.MemberInfo != null)
                         {
                             il.MarkLabel(item.SwitchLabel);
-                            /*reader.EmitLdarg(); //archi-Doc
-                            il.EmitCall(MessagePackReaderTypeInfo.IsNextNil); //archi-Doc
-                            il.Emit(OpCodes.Brtrue_S, loopEnd); //archi-Doc */
+                            reader.EmitLdarg(); //archi-Doc 1
+                            il.EmitCall(MessagePackReaderTypeInfo.IsNextNil); //archi-Doc 1
+                            il.Emit(OpCodes.Brtrue_S, loopEnd); //archi-Doc 1
                             EmitDeserializeValue(il, item, i++, tryEmitLoadCustomFormatter, reader, argResolver, localResolver);
                             il.Emit(OpCodes.Br, loopEnd);
                         }
@@ -1178,13 +1178,13 @@ namespace MessagePack.Internal
 
         private static void EmitDeserializeValue(ILGenerator il, DeserializeInfo info, int index, Func<int, ObjectSerializationInfo.EmittableMember, Action> tryEmitLoadCustomFormatter, ArgumentField argReader, ArgumentField argOptions, LocalBuilder localResolver)
         {
-            Label nilLabel = il.DefineLabel(); //archi-Doc
+            /*Label nilLabel = il.DefineLabel(); //archi-Doc 2
             argReader.EmitLdarg();
             il.EmitCall(MessagePackReaderTypeInfo.IsNextNil);
             il.Emit(OpCodes.Brtrue_S, nilLabel);
             il.EmitBoolean(true);
             il.EmitStloc(info.LocalFieldFlag);
-            il.MarkLabel(nilLabel);
+            il.MarkLabel(nilLabel);*/
 
             Label storeLabel = il.DefineLabel();
             ObjectSerializationInfo.EmittableMember member = info.MemberInfo;
@@ -1213,12 +1213,12 @@ namespace MessagePack.Internal
                     il.MarkLabel(readNonNilValueLabel);
                 }
 
-                Label nonNilLabel = il.DefineLabel(); //archi-Doc
-                il.EmitLdloc(info.LocalFieldFlag); //archi-Doc
-                il.Emit(OpCodes.Brtrue_S, nonNilLabel); //archi-Doc
-                il.Emit(OpCodes.Ldnull); //archi-Doc
-                il.Emit(OpCodes.Br, storeLabel); //archi-Doc
-                il.MarkLabel(nonNilLabel); //archi-Doc
+                /*Label nonNilLabel = il.DefineLabel(); //archi-Doc 2
+                il.EmitLdloc(info.LocalFieldFlag); //archi-Doc 2
+                il.Emit(OpCodes.Brtrue_S, nonNilLabel); //archi-Doc 2
+                il.Emit(OpCodes.Ldnull); //archi-Doc 2
+                il.Emit(OpCodes.Br, storeLabel); //archi-Doc 2
+                il.MarkLabel(nonNilLabel); //archi-Doc 2 */
 
                 argReader.EmitLdarg();
                 if (t == typeof(byte[]))
@@ -1246,8 +1246,8 @@ namespace MessagePack.Internal
             il.MarkLabel(storeLabel);
             il.EmitStloc(info.LocalField);
 
-            // il.EmitBoolean(true); //archi-Doc
-            // il.EmitStloc(info.LocalFieldFlag); //archi-Doc
+            il.EmitBoolean(true); //archi-Doc 1
+            il.EmitStloc(info.LocalFieldFlag); //archi-Doc 1
         }
 
         private static LocalBuilder EmitNewObject(ILGenerator il, Type type, ObjectSerializationInfo info, DeserializeInfo[] members, bool keepValue)
