@@ -30,11 +30,48 @@ namespace MessagePack.Tests
         public int y { get; set; } = 4;
     }
 
+    public enum ByteEnumGG : byte { A, B, C, D, E }
+    [MessagePackObject(true)]
+    public class SimpleStringKeyDataGG
+    {
+        public int Prop1 { get; set; }
+
+        public ByteEnumGG Prop2 { get; set; }
+
+        public int Prop3 { get; set; }
+    }
+
+    [MessagePackObject]
+    public class SimpleIntKeyDataGG
+    {
+        /*[Key(0)]
+        public int Prop1 { get; set; }
+
+        [Key(1)]
+        public ByteEnumGG Prop2 { get; set; }
+
+        [Key(2)]
+        public string Prop3 { get; set; }*/
+
+        [Key(3)]
+        public SimpleStringKeyDataGG Prop4 { get; set; }
+
+        //[Key(4)]
+        //public SimpleStructIntKeyData Prop5 { get; set; }
+
+        //[Key(5)]
+        //public SimpleStructStringKeyData Prop6 { get; set; }
+    }
+
     public class KeepValueTest
     {
         [Fact]
         public void KeepValueTest1()
         {
+            SimpleIntKeyDataGG n = null;
+            var bytes = MessagePackSerializer.Serialize(n);
+            var gg = MessagePackSerializer.Deserialize<SimpleIntKeyDataGG>(bytes);
+
             var sss = MessagePackSerializer.Serialize<Class4a>(null);
             var yyy = MessagePackSerializer.Deserialize<Class4a>(sss);
             {
