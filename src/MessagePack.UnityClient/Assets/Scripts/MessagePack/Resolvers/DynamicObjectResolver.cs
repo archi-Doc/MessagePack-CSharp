@@ -1121,7 +1121,7 @@ namespace MessagePack.Internal
                             il.MarkLabel(item.SwitchLabel);
                             reader.EmitLdarg(); //archi-Doc 1
                             il.EmitCall(MessagePackReaderTypeInfo.IsNextNil); //archi-Doc 1
-                            il.Emit(OpCodes.Brtrue_S, loopEnd); //archi-Doc 1
+                            il.Emit(OpCodes.Brtrue, loopEnd); //archi-Doc 1
                             EmitDeserializeValue(il, item, i++, tryEmitLoadCustomFormatter, reader, argResolver, localResolver);
                             il.Emit(OpCodes.Br, loopEnd);
                         }
@@ -1265,8 +1265,8 @@ namespace MessagePack.Internal
                 foreach (DeserializeInfo item in members.Where(x => x.MemberInfo != null && x.MemberInfo.IsWritable))
                 {
                     Label skipLocalField = il.DefineLabel(); //archi-Doc
-                    il.EmitLdloc(item.LocalFieldFlag); //archi-Doc
-                    il.Emit(OpCodes.Brfalse_S, skipLocalField); //archi-Doc
+                    // il.EmitLdloc(item.LocalFieldFlag); //archi-Doc
+                    // il.Emit(OpCodes.Brfalse_S, skipLocalField); //archi-Doc
 
                     il.Emit(OpCodes.Dup);
                     il.EmitLdloc(item.LocalField);
