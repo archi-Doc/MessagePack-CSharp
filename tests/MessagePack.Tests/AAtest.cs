@@ -100,7 +100,7 @@ namespace MessagePack.Tests
                 DynamicEnumResolver.Instance, // Try Enum
                 DynamicGenericResolver.Instance, // Try Array, Tuple, Collection, Enum(Generic Fallback)
                 DynamicUnionResolver.Instance, // Try Union(Interface)
-                DynamicObjectResolver.Instance,
+                DynamicObjectResolverKeepValue.Instance,
                 //DynamicObjectResolverKeepValue.Instance,
             });
             //var options = MessagePackSerializerOptions.Standard.WithLZ4Compression(true).WithResolver(StandardResolverAllowPrivate.Instance); //.WithResolver(resolver);
@@ -111,10 +111,12 @@ namespace MessagePack.Tests
             var s = MessagePackSerializer.Serialize(c);
             var c2 = MessagePackSerializer.Deserialize<KeepValueChild>(s);
             var c3 = MessagePackSerializer.Deserialize<KeepValueChild2>(s);
+            var c4 = MessagePackSerializer.Deserialize<KeepValueChild2>(s, options);
 
             var p = new KeepValueParent(12, "second", 122) { First = new KeepValueChild(10, "fir", 1) };
             var s2 = MessagePackSerializer.Serialize(p, options);
-            var p2 = MessagePackSerializer.Deserialize<KeepValueParent>(s2, options);
+            var p2 = MessagePackSerializer.Deserialize<KeepValueParent2>(s2);
+            var p3 = MessagePackSerializer.Deserialize<KeepValueParent2>(s2, options);
 
             Console.WriteLine("fin");
         }
@@ -135,6 +137,26 @@ namespace MessagePack.Tests
         }
 
         public KeepValueParent() { }
+    }
+
+    [MessagePackObject]
+    public class KeepValueParent2
+    {
+        [Key(0)]
+        public KeepValueChild First { get; set; }
+
+        [Key(1)]
+        public KeepValueChild Second { get; set; }
+
+        [Key(2)]
+        public KeepValueChild Third { get; set; }
+
+        public KeepValueParent2(int id, string name, int age)
+        {
+            Third = new KeepValueChild(3, "third", 33);
+        }
+
+        public KeepValueParent2() { }
     }
 
     [MessagePackObject]

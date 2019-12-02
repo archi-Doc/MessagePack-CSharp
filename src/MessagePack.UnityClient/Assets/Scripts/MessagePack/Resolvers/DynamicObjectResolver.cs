@@ -1119,9 +1119,12 @@ namespace MessagePack.Internal
                         if (item.MemberInfo != null)
                         {
                             il.MarkLabel(item.SwitchLabel);
+
+                            // skip deserialization if nil
                             reader.EmitLdarg(); //archi-Doc 1
-                            il.EmitCall(MessagePackReaderTypeInfo.IsNextNil); //archi-Doc 1
+                            il.EmitCall(MessagePackReaderTypeInfo.IsNil); //archi-Doc 1
                             il.Emit(OpCodes.Brtrue, loopEnd); //archi-Doc 1
+
                             EmitDeserializeValue(il, item, i++, tryEmitLoadCustomFormatter, reader, argResolver, localResolver);
                             il.Emit(OpCodes.Br, loopEnd);
                         }
@@ -1265,8 +1268,11 @@ namespace MessagePack.Internal
                 foreach (DeserializeInfo item in members.Where(x => x.MemberInfo != null && x.MemberInfo.IsWritable))
                 {
                     Label skipLocalField = il.DefineLabel(); //archi-Doc
-                    // il.EmitLdloc(item.LocalFieldFlag); //archi-Doc
-                    // il.Emit(OpCodes.Brfalse_S, skipLocalField); //archi-Doc
+                    if (keepValue)
+                    {// skip if LocalField is not set
+                        il.EmitLdloc(item.LocalFieldFlag); //archi-Doc
+                        il.Emit(OpCodes.Brfalse_S, skipLocalField); //archi-Doc
+                    }
 
                     il.Emit(OpCodes.Dup);
                     il.EmitLdloc(item.LocalField);
@@ -1390,7 +1396,8 @@ namespace MessagePack.Internal
             internal static readonly MethodInfo ReadMapHeader = typeof(MessagePackReader).GetRuntimeMethod(nameof(MessagePackReader.ReadMapHeader), Type.EmptyTypes);
             internal static readonly MethodInfo ReadBytes = typeof(MessagePackReader).GetRuntimeMethod(nameof(MessagePackReader.ReadBytes), Type.EmptyTypes);
             internal static readonly MethodInfo TryReadNil = typeof(MessagePackReader).GetRuntimeMethod(nameof(MessagePackReader.TryReadNil), Type.EmptyTypes);
-            internal static readonly MethodInfo IsNextNil = typeof(MessagePackReader).GetRuntimeMethod(nameof(MessagePackReader.IsNextNil), Type.EmptyTypes); //archi-Doc
+            //internal static readonly MethodInfo IsNextNil = typeof(MessagePackReader).GetRuntimeMethod(nameof(MessagePackReader.IsNextNil), Type.EmptyTypes); //archi-Doc
+            internal static readonly MethodInfo IsNil = typeof(MessagePackReader).GetRuntimeProperty(nameof(MessagePackReader.IsNil)).GetGetMethod(); //archi-Doc
             internal static readonly MethodInfo Skip = typeof(MessagePackReader).GetRuntimeMethod(nameof(MessagePackReader.Skip), Type.EmptyTypes);
         }
 
