@@ -68,24 +68,6 @@ namespace MessagePack.Tests
         [Fact]
         public void KeepValueTest1()
         {
-            SimpleIntKeyDataGG n = null;
-            var bytes = MessagePackSerializer.Serialize(n);
-            var gg = MessagePackSerializer.Deserialize<SimpleIntKeyDataGG>(bytes);
-
-            var sss = MessagePackSerializer.Serialize<Class4a>(null);
-            var yyy = MessagePackSerializer.Deserialize<Class4a>(sss);
-            {
-                var x = new Class4a();
-                var ss = MessagePackSerializer.Serialize(x);
-                var x2 = MessagePackSerializer.Deserialize<Class4a>(ss);
-                var x3 = MessagePackSerializer.Deserialize<Class4b>(ss);
-
-                var y = new Class4b();
-                var ss2 = MessagePackSerializer.Serialize(y);
-                var y2 = MessagePackSerializer.Deserialize<Class4a>(ss2);
-                var y3 = MessagePackSerializer.Deserialize<Class4b>(ss2);
-            }
-
             var resolver = CompositeResolver.Create(new IFormatterResolver[] {
                 BuiltinResolver.Instance, // Try Builtin
                 AttributeFormatterResolver.Instance, // Try use [MessagePackFormatter]
@@ -107,6 +89,26 @@ namespace MessagePack.Tests
             var options = MessagePackSerializerOptions.Standard.WithResolver(resolver2);
             //MessagePackSerializer.DefaultOptions = options; //affects other tests.
 
+            SimpleIntKeyDataGG n = null;
+            var bytes = MessagePackSerializer.Serialize(n);
+            var gg = MessagePackSerializer.Deserialize<SimpleIntKeyDataGG>(bytes);
+
+            var sss = MessagePackSerializer.Serialize<Class4a>(null);
+            var yyy = MessagePackSerializer.Deserialize<Class4a>(sss);
+            {
+                var x = new Class4a();
+                var ss = MessagePackSerializer.Serialize(x);
+                var x2 = MessagePackSerializer.Deserialize<Class4a>(ss);
+                var x3 = MessagePackSerializer.Deserialize<Class4b>(ss);
+                var x4 = MessagePackSerializer.Deserialize<Class4b>(ss, options);
+
+                var y = new Class4b();
+                var ss2 = MessagePackSerializer.Serialize(y);
+                var y2 = MessagePackSerializer.Deserialize<Class4a>(ss2);
+                var y3 = MessagePackSerializer.Deserialize<Class4b>(ss2);
+                var y4 = MessagePackSerializer.Deserialize<Class4b>(ss2, options);
+            }
+
             var c = new KeepValueChild(1, "one", 11);
             var s = MessagePackSerializer.Serialize(c);
             var c2 = MessagePackSerializer.Deserialize<KeepValueChild>(s);
@@ -119,8 +121,10 @@ namespace MessagePack.Tests
             var p3 = MessagePackSerializer.Deserialize<KeepValueParent3>(s2, options);
 
             var list = new List<KeepValueChild>();
-            list.Add(new KeepValueChild(1, "one", 10));
-            list.Add(new KeepValueChild(2, "two", 20));
+            list.Add(new KeepValueChild() { Id = 1, Name = "one", Age = 10 });
+            list.Add(new KeepValueChild() { Id = 2, Name = "two", Age = 20 });
+            //list.Add(new KeepValueChild(1, "one", 10) { Id = 1, Name = "one", Age = 10 });
+            //list.Add(new KeepValueChild(2, "two", 20) { Id = 1, Name = "one", Age = 10 });
             var s3 = MessagePackSerializer.Serialize(list, options);
             var p4 = MessagePackSerializer.Deserialize<List<KeepValueChild>>(s3, options);
             var p5 = MessagePackSerializer.Deserialize<List<KeepValueChild_IdName>>(s3, options);
@@ -142,7 +146,8 @@ namespace MessagePack.Tests
 
         public KeepValueParent(int id, string name, int age)
         {
-            Second = new KeepValueChild(id, name, age);
+            //Second = new KeepValueChild(id, name, age);
+            Second = new KeepValueChild() { Id = id, Name = name, Age = age };
         }
 
         public KeepValueParent() { }
@@ -162,7 +167,8 @@ namespace MessagePack.Tests
 
         public KeepValueParent3()
         {
-            Third = new KeepValueChild(3, "three", 33);
+            //Third = new KeepValueChild(3, "three", 33);
+            Third = new KeepValueChild() { Id = 3, Name = "three", Age = 36 };
         }
     }
 
@@ -231,16 +237,15 @@ namespace MessagePack.Tests
         public int Id { get; set; } = -1;
         [Key(1)]
         public string Name { get; set; }
-        [Key(2)]
-        public string Memo { get; set; }// = "empty"; //invalid
+        //[Key(2)]
+        //public string Memo { get; set; } = "empty"; //invalid
         [Key(3)]
         public int Age { get; set; } = -1; //initial value
-        //[Key(4)]
-        //public string Height { get; set; } = "100";
+        [Key(4)]
+        public string Height { get; set; } = "100";
 
         public KeepValueChild2()
         {
-            //Height = "100";
         }
     }
 }
