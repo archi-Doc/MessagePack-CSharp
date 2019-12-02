@@ -100,8 +100,8 @@ namespace MessagePack.Tests
                 DynamicEnumResolver.Instance, // Try Enum
                 DynamicGenericResolver.Instance, // Try Array, Tuple, Collection, Enum(Generic Fallback)
                 DynamicUnionResolver.Instance, // Try Union(Interface)
-                DynamicObjectResolver.Instance,
-                //DynamicObjectResolverKeepValue.Instance,
+                //DynamicObjectResolver.Instance,
+                DynamicObjectResolverKeepValue.Instance,
             });
             //var options = MessagePackSerializerOptions.Standard.WithLZ4Compression(true).WithResolver(StandardResolverAllowPrivate.Instance); //.WithResolver(resolver);
             var options = MessagePackSerializerOptions.Standard.WithResolver(resolver2);
@@ -111,10 +111,21 @@ namespace MessagePack.Tests
             var s = MessagePackSerializer.Serialize(c);
             var c2 = MessagePackSerializer.Deserialize<KeepValueChild>(s);
             var c3 = MessagePackSerializer.Deserialize<KeepValueChild2>(s);
+            var c4 = MessagePackSerializer.Deserialize<KeepValueChild2>(s, options);
 
             var p = new KeepValueParent(12, "second", 122) { First = new KeepValueChild(10, "fir", 1) };
             var s2 = MessagePackSerializer.Serialize(p, options);
             var p2 = MessagePackSerializer.Deserialize<KeepValueParent>(s2, options);
+            var p3 = MessagePackSerializer.Deserialize<KeepValueParent3>(s2, options);
+
+            var list = new List<KeepValueChild>();
+            list.Add(new KeepValueChild(1, "one", 10));
+            list.Add(new KeepValueChild(2, "two", 20));
+            var s3 = MessagePackSerializer.Serialize(list, options);
+            var p4 = MessagePackSerializer.Deserialize<List<KeepValueChild>>(s3, options);
+            var p5 = MessagePackSerializer.Deserialize<List<KeepValueChild_IdName>>(s3, options);
+            var p6 = MessagePackSerializer.Deserialize<List<KeepValueChild_IdNameAgeMemo>>(s3, options);
+            var p7 = MessagePackSerializer.Deserialize<List<KeepValueChild2>>(s3, options);
 
             Console.WriteLine("fin");
         }
@@ -138,6 +149,24 @@ namespace MessagePack.Tests
     }
 
     [MessagePackObject]
+    public class KeepValueParent3
+    {
+        [Key(0)]
+        public KeepValueChild First { get; set; }
+
+        [Key(1)]
+        public KeepValueChild Second { get; set; }
+
+        [Key(2)]
+        public KeepValueChild Third { get; set; }
+
+        public KeepValueParent3()
+        {
+            Third = new KeepValueChild(3, "three", 33);
+        }
+    }
+
+    [MessagePackObject]
     public class KeepValueChild
     {
         [Key(0)]
@@ -145,7 +174,8 @@ namespace MessagePack.Tests
 
         [Key(1)]
         public string Name { get; set; }
-
+        [Key(2)]
+        public string Memo { get; set; }// = "empty"; //invalid
         [Key(3)]
         public int Age { get; set; } = -1; //initial value
 
@@ -162,20 +192,55 @@ namespace MessagePack.Tests
     }
 
     [MessagePackObject]
+    public class KeepValueChild_IdName
+    {
+        [Key(0)]
+        public int Id { get; set; }
+
+        [Key(1)]
+        public string Name { get; set; }
+
+        public KeepValueChild_IdName()
+        {
+        }
+    }
+    [MessagePackObject]
+    public class KeepValueChild_IdNameAgeMemo
+    {
+        [Key(0)]
+        public int Id { get; set; }
+
+        [Key(1)]
+        public string Name { get; set; }
+
+        [Key(3)]
+        public int Age { get; set; } = -1; //initial value
+
+        [Key(4)]
+        public string Memo { get; set; } = "default memo";
+
+        public KeepValueChild_IdNameAgeMemo()
+        {
+        }
+    }
+
+    [MessagePackObject]
     public class KeepValueChild2
     {
         [Key(0)]
         public int Id { get; set; } = -1;
-
+        [Key(1)]
+        public string Name { get; set; }
         [Key(2)]
-        public string Memo { get; set; } = "empty"; //invalid
-
-        [Key(4)]
-        public string Height { get; set; }
+        public string Memo { get; set; }// = "empty"; //invalid
+        [Key(3)]
+        public int Age { get; set; } = -1; //initial value
+        //[Key(4)]
+        //public string Height { get; set; } = "100";
 
         public KeepValueChild2()
         {
-            Height = "100";
+            //Height = "100";
         }
     }
 }
