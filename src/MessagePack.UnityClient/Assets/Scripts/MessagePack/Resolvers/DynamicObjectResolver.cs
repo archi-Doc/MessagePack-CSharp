@@ -904,6 +904,7 @@ namespace MessagePack.Internal
                             {
                                 MemberInfo = member,
                                 LocalField = il.DeclareLocal(member.Type),
+                                LocalFieldFlag = il.DeclareLocal(typeof(bool)), //archi-Doc
                                 SwitchLabel = il.DefineLabel(),
                             };
                         }
@@ -919,6 +920,7 @@ namespace MessagePack.Internal
                             {
                                 MemberInfo = null,
                                 LocalField = null,
+                                LocalFieldFlag = null, //archi-Doc
                                 SwitchLabel = gotoDefault.Value,
                             };
                         }
@@ -932,6 +934,7 @@ namespace MessagePack.Internal
                     {
                         MemberInfo = item,
                         LocalField = il.DeclareLocal(item.Type),
+                        LocalFieldFlag = il.DeclareLocal(typeof(bool)), //archi-Doc
                         //// SwitchLabel = il.DefineLabel()
                     })
                     .ToArray();
@@ -1006,6 +1009,11 @@ namespace MessagePack.Internal
 
                     il.EmitLdloc(forILocal);
                     il.EmitStloc(key);
+
+                    // skip deserialization if nil
+                    reader.EmitLdarg(); //archi-Doc
+                    il.EmitCall(MessagePackReaderTypeInfo.TryReadNil); //archi-Doc
+                    il.Emit(OpCodes.Brtrue, loopEnd); //archi-Doc
 
                     // switch... local = Deserialize
                     il.EmitLdloc(key);
@@ -1139,6 +1147,9 @@ namespace MessagePack.Internal
 
             il.MarkLabel(storeLabel);
             il.EmitStloc(info.LocalField);
+
+            il.EmitBoolean(true); //archi-Doc
+            il.EmitStloc(info.LocalFieldFlag); //archi-Doc
         }
 
         private static LocalBuilder EmitNewObject(ILGenerator il, Type type, ObjectSerializationInfo info, DeserializeInfo[] members)
@@ -1155,9 +1166,16 @@ namespace MessagePack.Internal
 
                 foreach (DeserializeInfo item in members.Where(x => x.MemberInfo != null && x.MemberInfo.IsWritable))
                 {
+                    Label skipLocalField = il.DefineLabel(); //archi-Doc
+                    // skip if LocalField is not set
+                    il.EmitLdloc(item.LocalFieldFlag); //archi-Doc
+                    il.Emit(OpCodes.Brfalse_S, skipLocalField); //archi-Doc
+
                     il.Emit(OpCodes.Dup);
                     il.EmitLdloc(item.LocalField);
                     item.MemberInfo.EmitStoreValue(il);
+
+                    il.MarkLabel(skipLocalField); //archi-Doc
                 }
 
                 return null;
@@ -1303,6 +1321,8 @@ namespace MessagePack.Internal
             public ObjectSerializationInfo.EmittableMember MemberInfo { get; set; }
 
             public LocalBuilder LocalField { get; set; }
+
+            public LocalBuilder LocalFieldFlag { get; set; } //archi-Doc
 
             public Label SwitchLabel { get; set; }
         }
