@@ -65,6 +65,8 @@ namespace MessagePack.Tests
         {
             var tc = new DateTimeTestClass();
             var st = MessagePackSerializer.SerializeToJson(tc);
+            var bin = MessagePackSerializer.ConvertFromJson(st);
+            var tc2 = MessagePackSerializer.Deserialize<DateTimeTestClass>(bin);
         }
 
         [Fact]
