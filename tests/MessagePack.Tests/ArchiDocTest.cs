@@ -47,8 +47,26 @@ namespace MessagePack.Tests
         //[Key(5)]
         //public SimpleStructStringKeyData Prop6 { get; set; }
     }
+
+    [MessagePackObject(true)]
+    public partial class DateTimeTestClass
+    {
+        public int Int { get; set; }
+
+        public double Double { get; set; }
+
+        public DateTime Date { get; set; } = DateTime.UtcNow;
+    }
+
     public class ArchiDocTest
     {
+        [Fact]
+        public void ArchiDoc_Sandbox()
+        {
+            var tc = new DateTimeTestClass();
+            var st = MessagePackSerializer.SerializeToJson(tc);
+        }
+
         [Fact]
         public void ArchiDocTest1()
         {
